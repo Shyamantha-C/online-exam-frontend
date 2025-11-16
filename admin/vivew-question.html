@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Questions</title>
+
+    <!-- Bootstrap -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <div class="text-center mb-4">
+        <h2>All Questions</h2>
+        <p class="text-muted">Manage, view or delete questions here</p>
+    </div>
+
+    <div id="msg" class="text-center mb-3"></div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Question</th>
+                <th>Options</th>
+                <th>Correct</th>
+                <th>Order</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="questions-table">
+            <!-- Dynamic Rows -->
+        </tbody>
+    </table>
+
+    <div class="text-center mt-3">
+        <a href="admin-dashboard.html">⬅ Back to Dashboard</a>
+    </div>
+
+</div>
+
+<script src="admin.js"></script>
+<script>
+if (!localStorage.getItem("adminToken")) {
+    window.location.href = "admin-login.html";
+}
+
+loadQuestions();
+</script>
+
+</body>
+</html>

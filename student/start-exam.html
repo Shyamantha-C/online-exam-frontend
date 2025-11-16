@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Exam</title>
+
+    <!-- Bootstrap -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-5">
+    <h3 class="text-center mb-4">Start Exam</h3>
+    <div id="msg" class="text-center mb-4"></div>
+
+    <div class="text-center">
+        <button class="btn btn-success btn-lg" onclick="startExamNow()">Start Now</button>
+    </div>
+</div>
+
+<script>
+const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
+
+if (!localStorage.getItem("student_id")) {
+    window.location.href = "student-login.html";
+}
+
+async function startExamNow() {
+    const student_id = localStorage.getItem("student_id");
+    const msg = document.getElementById("msg");
+
+    const response = await fetch(`${BASE_URL}/api/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: student_id })
+    });
+
+    const data = await response.json();
+
+    if (data.status === "error" && data.msg === "Already attempted") {
+        msg.innerHTML = `<span class='text-danger'>You have already attempted this exam.</span>`;
+        return;
+    }
+
+    // success → go to exam page
+    const attempt_id = data.attempt_id;
+    window.location.href = `exam.html?attempt=${attempt_id}`;
+}
+</script>
+
+</body>
+</html>

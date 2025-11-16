@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h2>Admin Dashboard</h2>
+        <p class="text-muted">Manage the online exam system</p>
+    </div>
+
+    <div class="row justify-content-center">
+
+        <div class="col-md-4 mb-3">
+            <a href="add-question.html" class="btn btn-primary w-100 py-3">
+                ➕ Add Question
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <a href="view-questions.html" class="btn btn-info w-100 py-3">
+                📚 View Questions
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <a href="view-results.html" class="btn btn-success w-100 py-3">
+                📊 View Results
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <button class="btn btn-danger w-100 py-3" onclick="adminLogout()">
+                🚪 Logout
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script src="admin.js"></script>
+
+<script>
+// Block page if admin is not logged in
+if (!localStorage.getItem("adminToken")) {
+    window.location.href = "admin-login.html";
+}
+</script>
+
+</body>
+</html>
