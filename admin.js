@@ -1,13 +1,16 @@
+// =============================
+// CONFIG
+// =============================
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 
-// -------------------------------------
-// Admin Login
-// -------------------------------------
+
+// =============================
+// ADMIN LOGIN
+// =============================
 async function adminLogin() {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
     const msg = document.getElementById("msg");
-
     msg.innerHTML = "";
 
     const response = await fetch(`${BASE_URL}/api/admin/login`, {
@@ -22,21 +25,23 @@ async function adminLogin() {
         localStorage.setItem("adminToken", data.token);
         window.location.href = "admin-dashboard.html";
     } else {
-        msg.innerHTML = `<span class="text-danger">Invalid username or password</span>`;
+        msg.innerHTML = `<span class='text-danger'>Invalid username or password</span>`;
     }
 }
 
-// -------------------------------------
-// Admin Logout
-// -------------------------------------
+
+// =============================
+// ADMIN LOGOUT
+// =============================
 function adminLogout() {
     localStorage.removeItem("adminToken");
     window.location.href = "admin-login.html";
 }
 
-// -------------------------------------
-// Add Question
-// -------------------------------------
+
+// =============================
+// ADD QUESTION
+// =============================
 async function addQuestion() {
     const msg = document.getElementById("msg");
 
@@ -70,7 +75,6 @@ async function addQuestion() {
 
     if (data.status === "ok") {
         msg.innerHTML = `<span class='text-success'>Question added successfully ✔</span>`;
-
         document.getElementById("qtext").value = "";
         document.getElementById("opta").value = "";
         document.getElementById("optb").value = "";
@@ -83,17 +87,16 @@ async function addQuestion() {
     }
 }
 
-// -------------------------------------
-// Load All Questions
-// -------------------------------------
+
+// =============================
+// LOAD QUESTIONS
+// =============================
 async function loadQuestions() {
     const table = document.getElementById("questions-table");
     table.innerHTML = "";
 
     const response = await fetch(`${BASE_URL}/api/admin/questions`, {
-        headers: {
-            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
-        }
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
     });
 
     const data = await response.json();
@@ -126,40 +129,37 @@ async function loadQuestions() {
     });
 }
 
-// -------------------------------------
-// Delete Question
-// -------------------------------------
+
+// =============================
+// DELETE QUESTION
+// =============================
 async function deleteQuestion(id) {
     if (!confirm("Are you sure you want to delete this question?")) return;
 
     const response = await fetch(`${BASE_URL}/api/admin/delete-question/${id}`, {
         method: "DELETE",
-        headers: {
-            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
-        }
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
     });
 
     const data = await response.json();
 
     if (data.status === "ok") {
-        alert("Question deleted!");
         loadQuestions();
     } else {
         alert("Failed to delete question");
     }
 }
 
-// -------------------------------------
-// Load Results
-// -------------------------------------
+
+// =============================
+// LOAD RESULTS LIST
+// =============================
 async function loadResults() {
     const table = document.getElementById("results-table");
     table.innerHTML = "";
 
     const response = await fetch(`${BASE_URL}/api/results`, {
-        headers: {
-            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
-        }
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
     });
 
     const data = await response.json();
@@ -186,21 +186,19 @@ async function loadResults() {
     });
 }
 
-// -------------------------------------
-// Load Single Detailed Result
-// -------------------------------------
+
+// =============================
+// LOAD SINGLE RESULT DETAIL
+// =============================
 async function loadSingleResult(attempt_id) {
     const response = await fetch(`${BASE_URL}/api/admin/result/${attempt_id}`, {
-        headers: {
-            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
-        }
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
     });
 
     const data = await response.json();
 
     if (data.status !== "ok") {
-        document.body.innerHTML =
-          "<h3 class='text-danger text-center'>Unable to load result</h3>";
+        document.body.innerHTML = "<h3 class='text-danger text-center'>Unable to load result</h3>";
         return;
     }
 
@@ -219,18 +217,13 @@ async function loadSingleResult(attempt_id) {
         const row = `
         <tr>
             <td>${ans.question}</td>
-            <td>
-                A: ${ans.opt_a}<br>
-                B: ${ans.opt_b}<br>
-                C: ${ans.opt_c}<br>
-                D: ${ans.opt_d}
-            </td>
+            <td>A: ${ans.opt_a}<br>B: ${ans.opt_b}<br>C: ${ans.opt_c}<br>D: ${ans.opt_d}</td>
             <td>${ans.correct}</td>
-            <td>${ans.selected || '-'}</td>
+            <td>${ans.selected || "-"}</td>
             <td class="${
-                ans.status === 'Correct' ? 'text-success' :
-                ans.status === 'Wrong' ? 'text-danger' :
-                'text-muted'
+                ans.status === "Correct" ? "text-success" :
+                ans.status === "Wrong"   ? "text-danger"  :
+                "text-muted"
             }">${ans.status}</td>
         </tr>`;
         table.innerHTML += row;
