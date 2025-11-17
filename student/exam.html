@@ -1,13 +1,3 @@
-<script>
-if (!localStorage.getItem("student_id")) {
-    window.location.href = "student-login.html";
-}
-
-window.history.pushState(null, "", window.location.href);
-window.onpopstate = function () {
-    window.history.pushState(null, "", window.location.href);
-};
-</script>
 
 
 <!DOCTYPE html>
