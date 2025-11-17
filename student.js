@@ -13,7 +13,7 @@ async function studentLogin() {
     const response = await fetch(`${BASE_URL}/api/student/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roll_no: roll, password: password })
+        body: JSON.stringify({ username: roll, password: password })
     });
 
     const data = await response.json();
