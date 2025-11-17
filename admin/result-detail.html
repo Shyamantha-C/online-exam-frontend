@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result Details</title>
+    <title>Student Result Details</title>
 
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -49,67 +47,9 @@ if (!localStorage.getItem("adminToken")) {
 }
 
 const params = new URLSearchParams(window.location.search);
-const attemptId = params.get("id");
+const attempt_id = params.get("attempt");
 
-loadDetail(attemptId);
-</script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result Details</title>
-
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
-</head>
-
-<body class="bg-light">
-
-<div class="container py-4">
-
-    <div class="text-center mb-4">
-        <h2>Student Result Details</h2>
-    </div>
-
-    <div id="student-info" class="mb-4"></div>
-
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>#</th>
-                <th>Question</th>
-                <th>Options</th>
-                <th>Correct</th>
-                <th>Selected</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-
-        <tbody id="detail-table"></tbody>
-    </table>
-
-    <div class="text-center mt-3">
-        <a href="view-results.html">⬅ Back to Results</a>
-    </div>
-
-</div>
-
-<script src="../admin.js"></script>
-
-<script>
-if (!localStorage.getItem("adminToken")) {
-    window.location.href = "admin-login.html";
-}
-
-const params = new URLSearchParams(window.location.search);
-const attemptId = params.get("id");
-
-loadDetail(attemptId);
+loadSingleResult(attempt_id);
 </script>
 
 </body>
