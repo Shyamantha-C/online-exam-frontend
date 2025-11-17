@@ -29,3 +29,9 @@ async function studentLogin() {
         msg.innerHTML = `<span class="text-danger">Invalid credentials</span>`;
     }
 }
+
+function studentLogout() {
+    localStorage.removeItem("student_id");
+    localStorage.removeItem("student_name");
+    window.location.href = "student-login.html";
+}

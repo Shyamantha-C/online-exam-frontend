@@ -1,3 +1,16 @@
+<script>
+if (!localStorage.getItem("adminToken")) {
+    window.location.href = "admin-login.html";
+}
+
+// Prevent back button from accessing cached protected pages
+window.history.pushState(null, "", window.location.href);
+window.onpopstate = function () {
+    window.history.pushState(null, "", window.location.href);
+};
+</script>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

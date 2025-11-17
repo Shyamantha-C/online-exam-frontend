@@ -1,3 +1,15 @@
+<script>
+if (!localStorage.getItem("student_id")) {
+    window.location.href = "student-login.html";
+}
+
+window.history.pushState(null, "", window.location.href);
+window.onpopstate = function () {
+    window.history.pushState(null, "", window.location.href);
+};
+</script>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,6 +35,11 @@
 
 </div>
 
+<div class="text-center mt-3">
+    <button class="btn btn-danger w-50" onclick="studentLogout()">Logout</button>
+</div>
+
+
 <script>
     if (!localStorage.getItem("student_id")) {
         window.location.href = "student-login.html";
@@ -33,6 +50,8 @@
     function startExam() {
         window.location.href = "start-exam.html";
     }
+
+    
 </script>
 
 </body>
