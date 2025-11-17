@@ -35,7 +35,7 @@ async function adminLogin() {
 // =============================
 function adminLogout() {
     localStorage.removeItem("adminToken");
-    window.location.href = "admin-login.html";
+    window.location.href = "../index.html";
 }
 
 
