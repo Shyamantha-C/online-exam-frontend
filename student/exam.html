@@ -1,115 +1,177 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam</title>
-
-    <!-- Bootstrap -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; }
+        .timer-box { background: #dc3545; color: white; padding: 12px; border-radius: 12px; font-weight: bold; }
+        .per-q-timer { background: #0d6efd; color: white; padding: 8px 15px; border-radius: 50px; font-size: 1.1rem; }
+    </style>
 </head>
-
 <body class="bg-light">
 
 <div class="container py-4">
 
-    <h3 class="text-center mb-3">Exam</h3>
+    <div class="text-center mb-4">
+        <h3 class="mb-3">Online Exam</h3>
+        <div id="overallTimer" class="timer-box d-inline-block px-4">Loading...</div>
+    </div>
 
-    <div id="timer" class="text-center fs-4 text-danger mb-3"></div>
-
-    <div id="qbox" class="card shadow p-4"></div>
+    <div id="qbox" class="card shadow-lg border-0"></div>
 
 </div>
 
 <script>
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
-
-const params = new URLSearchParams(window.location.search);
-const attempt_id = params.get("attempt");
+const urlParams = new URLSearchParams(window.location.search);
+const attempt_id = urlParams.get("attempt");
+const student_id = localStorage.getItem('student_id');
 
 let questions = [];
-let index = 0;
-let answers = {};
-let timer = 0;
-let timerInterval;
+let currentIndex = 0;
+let answers = {};  // { question_id: "A"|"B"|"C"|"D"|null }
 
-if (!attempt_id) {
-    alert("Invalid attempt");
+if (!attempt_id || !student_id) {
+    alert("Session expired. Redirecting to login...");
     window.location.href = "student-dashboard.html";
 }
 
-loadQuestions();
+// Load exam
+fetch(`${BASE_URL}/api/questions_for/${attempt_id}`)
+    .then(r => r.json())
+    .then(data => {
+        questions = data.questions;
+        if (questions.length === 0) return alert("No questions!");
+        renderQuestion();
+        startOverallTimer(data.total_time);
+    });
 
-async function loadQuestions() {
-    const response = await fetch(`${BASE_URL}/api/questions_for/${attempt_id}`);
-    const data = await response.json();
+// Show current question
+function renderQuestion() {
+    const q = questions[currentIndex];
 
-    questions = data.questions;
-    showQuestion();
+    document.getElementById('qbox').innerHTML = `
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h5 class="mb-0">
+                Question ${currentIndex + 1} of ${questions.length}
+                <span class="float-end badge bg-light text-primary per-q-timer">
+                    ⏱ <span id="perQTimer">${q.per_question_time}</span>s
+                </span>
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+            <h4 class="mb-4">${q.text}</h4>
+
+            <div class="options">
+                ${['A', 'B', 'C', 'D'].map(letter => `
+                    <div class="form-check mb-3 p-3 border rounded hover-bg">
+                        <input class="form-check-input" type="radio" name="option" id="opt${letter}" value="${letter}"
+                            ${answers[q.id] === letter ? 'checked' : ''}>
+                        <label class="form-check-label fs-5" for="opt${letter}">
+                            <strong>${letter}.</strong> ${q.options[letter]}
+                        </label>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="text-center mt-4">
+                <button id="nextBtn" class="btn btn-lg px-5 fw-bold ${
+                    currentIndex === questions.length - 1 ? 'btn-danger' : 'btn-success'
+                }" onclick="goNext()">
+                    ${currentIndex === questions.length - 1 ? 'Submit Exam' : 'Next Question →'}
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Start per-question timer
+    startPerQuestionTimer(q.per_question_time);
+
+    // Save answer when selected
+    document.querySelectorAll('input[name="option"]').forEach(radio => {
+        radio.onchange = () => answers[q.id] = radio.value;
+    });
 }
 
-function showQuestion() {
-    if (index >= questions.length) {
-        submitAnswers();
+// GO NEXT (NO GOING BACK!)
+function goNext() {
+    // Save current answer
+    const selected = document.querySelector('input[name="option"]:checked');
+    answers[questions[currentIndex].id] = selected ? selected.value : null;
+
+    // If last question → submit
+    if (currentIndex === questions.length - 1) {
+        if (confirm("⚠️ Final Submission!\nAre you sure you want to submit the exam?")) {
+            submitExam();
+        }
         return;
     }
 
-    const q = questions[index];
+    currentIndex++;
+    renderQuestion();
+}
 
-    timer = q.per_question_time;
-    document.getElementById("timer").innerText = `Time Left: ${timer}s`;
+// Per-question timer (auto next when time ends)
+function startPerQuestionTimer(seconds) {
+    let time = seconds;
+    const timerEl = document.getElementById('perQTimer');
+    
+    const interval = setInterval(() => {
+        time--;
+        timerEl.textContent = time;
 
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        timer--;
-        document.getElementById("timer").innerText = `Time Left: ${timer}s`;
-        if (timer <= 0) {
-            nextQuestion();
+        if (time <= 0) {
+            clearInterval(interval);
+            goNext();  // Auto move to next
         }
     }, 1000);
-
-    document.getElementById("qbox").innerHTML = `
-        <h5>Q${index + 1}. ${q.text}</h5>
-        <hr>
-        <div>
-            <button class="btn btn-outline-primary w-100 mb-2" onclick="selectAnswer('${q.id}', 'A')">A: ${q.options.A}</button>
-            <button class="btn btn-outline-primary w-100 mb-2" onclick="selectAnswer('${q.id}', 'B')">B: ${q.options.B}</button>
-            <button class="btn btn-outline-primary w-100 mb-2" onclick="selectAnswer('${q.id}', 'C')">C: ${q.options.C}</button>
-            <button class="btn btn-outline-primary w-100 mb-2" onclick="selectAnswer('${q.id}', 'D')">D: ${q.options.D}</button>
-        </div>
-        <button class="btn btn-secondary mt-3" onclick="nextQuestion()">Next</button>
-    `;
 }
 
-function selectAnswer(qid, opt) {
-    answers[qid] = opt;
-    nextQuestion();
+// Overall timer
+function startOverallTimer(totalSeconds) {
+    let time = totalSeconds;
+    const el = document.getElementById('overallTimer');
+
+    const interval = setInterval(() => {
+        const m = String(Math.floor(time / 60)).padStart(2, '0');
+        const s = String(time % 60).padStart(2, '0');
+        el.textContent = `${m}:${s}`;
+
+        if (time <= 0) {
+            clearInterval(interval);
+            alert("⏰ Time Over! Submitting your exam...");
+            submitExam();
+        }
+        time--;
+    }, 1000);
 }
 
-function nextQuestion() {
-    index++;
-    showQuestion();
-}
-
-async function submitAnswers() {
-    const response = await fetch(`${BASE_URL}/api/submit`, {
+// Final submit
+function submitExam() {
+    fetch(`${BASE_URL}/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            attempt_id: attempt_id,
+            attempt_id: parseInt(attempt_id),
             answers: answers
         })
+    })
+    .then(r => r.json())
+    .then(res => {
+        localStorage.removeItem('attempt_id');
+        alert(`🎉 Exam Submitted!\nYour Score: ${res.score} / ${questions.length}`);
+        window.location.href = `exam-complete.html?score=${res.score}&total=${questions.length}`;
+    })
+    .catch(() => {
+        alert("Submission failed. Try again.");
     });
-
-    const data = await response.json();
-
-    window.location.href = `exam-complete.html?score=${data.score}`;
 }
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
