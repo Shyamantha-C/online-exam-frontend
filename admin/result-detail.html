@@ -1,49 +1,61 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Result Details</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+        .correct { color: green; font-weight: bold; }
+        .wrong { color: red; font-weight: bold; }
+        .skipped { color: orange; font-weight: bold; }
+    </style>
 </head>
-
 <body class="bg-light">
 
 <div class="container py-4">
 
     <div class="text-center mb-4">
-        <h2>Student Result Details</h2>
+        <h2 class="fw-bold">Student Result Details</h2>
+        <p class="text-muted">Detailed answer-wise report</p>
     </div>
 
-    <div id="student-info" class="mb-4"></div>
+    <div id="student-info" class="alert alert-info text-center fs-5"></div>
 
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>#</th>
-                <th>Question</th>
-                <th>Options</th>
-                <th>Correct</th>
-                <th>Selected</th>
-                <th>Status</th>
-            </tr>
-        </thead>
+    <div id="result-content">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th width="5%">#</th>
+                    <th width="40%">Question</th>
+                    <th width="15%">Correct</th>
+                    <th width="15%">Selected</th>
+                    <th width="10%">Status</th>
+                </tr>
+            </thead>
+            <tbody id="detail-table"></tbody>
+        </table>
+    </div>
 
-        <tbody id="detail-table"></tbody>
-    </table>
-
-    <div class="text-center mt-3">
-        <a href="view-results.html">⬅ Back to Results</a>
+    <div class="text-center mt-4 no-print">
+        <button onclick="downloadPDF()" class="btn btn-success btn-lg px-5 shadow">
+            📥 Download Result as PDF
+        </button>
+        <br><br>
+        <a href="view-results.html" class="btn btn-secondary">⬅ Back to All Results</a>
     </div>
 
 </div>
 
-<script src="../admin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
+// Admin check
 if (!localStorage.getItem("adminToken")) {
     window.location.href = "admin-login.html";
 }
@@ -51,7 +63,110 @@ if (!localStorage.getItem("adminToken")) {
 const params = new URLSearchParams(window.location.search);
 const attempt_id = params.get("attempt");
 
+let studentName = "";
+let studentRoll = "";
+let finalScore = 0;
+let totalQuestions = 0;
+
 loadSingleResult(attempt_id);
+
+async function loadSingleResult(id) {
+    const res = await fetch(`https://online-exam-backend-f3rp.onrender.com/api/admin/result/${id}`);
+    const data = await res.json();
+
+    studentName = data.student.name;
+    studentRoll = data.student.roll_no || "N/A";
+    finalScore = data.student.score;
+    totalQuestions = data.answers.length;
+
+    document.getElementById("student-info").innerHTML = `
+        <strong>${studentName}</strong> (Roll No: ${studentRoll})<br>
+        Score: <strong>${finalScore} / ${totalQuestions}</strong> 
+        | Exam Completed: ${new Date(data.student.finished_at).toLocaleString()}
+    `;
+
+    const tbody = document.getElementById("detail-table");
+    tbody.innerHTML = "";
+
+    data.answers.forEach((ans, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${ans.question}</td>
+            <td class="text-success fw-bold">${ans.correct}</td>
+            <td class="${ans.status === 'Correct' ? 'text-success' : ans.status === 'Wrong' ? 'text-danger' : 'text-warning'} fw-bold">
+                ${ans.selected || "—"}
+            </td>
+            <td>
+                <span class="badge ${ans.status === 'Correct' ? 'bg-success' : ans.status === 'Wrong' ? 'bg-danger' : 'bg-warning'}">
+                    ${ans.status}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// MAIN FUNCTION — DOWNLOAD BEAUTIFUL PDF
+async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+
+    // Temporarily hide buttons
+    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+
+    const canvas = await html2canvas(document.body, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+    });
+
+    // Show buttons again
+    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'block');
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const imgWidth = 190;
+    const pageHeight = 290;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 15;
+
+    // Header
+    pdf.setFontSize(20);
+    pdf.text("ONLINE EXAM RESULT", 105, position, { align: "center" });
+    position += 10;
+
+    pdf.setFontSize(14);
+    pdf.text(`Student: ${studentName}`, 20, position);
+    pdf.text(`Roll No: ${studentRoll}`, 120, position);
+    position += 10;
+
+    pdf.setFontSize(16);
+    pdf.text(`Final Score: ${finalScore} / ${totalQuestions}`, 105, position, { align: "center" });
+    position += 10;
+
+    pdf.setFontSize(12);
+    pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
+    position += 15;
+
+    // Add captured image
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + 20;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+    }
+
+    // Save with meaningful name
+    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, '_');
+    pdf.save(`${safeName}_Result_${finalScore}_${totalQuestions}.pdf`);
+
+    alert("PDF Downloaded Successfully! 🎉");
+}
 </script>
 
 </body>
