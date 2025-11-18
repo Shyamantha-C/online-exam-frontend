@@ -46,7 +46,7 @@
             📥 Download Result as PDF
         </button>
         <br><br>
-        <a href="view-results.html" class="btn btn-secondary">⬅ Back to All Results</a>
+        <a href="view-result.html" class="btn btn-secondary">⬅ Back to All Results</a>
     </div>
 
 </div>
@@ -111,59 +111,32 @@ async function loadSingleResult(id) {
 async function downloadPDF() {
     const { jsPDF } = window.jspdf;
 
-    // Temporarily hide buttons
-    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+    // Wait a bit for everything to render
+    await new Promise(r => setTimeout(r, 800));
 
-    const canvas = await html2canvas(document.body, {
+    const content = document.body;
+
+    const canvas = await html2canvas(content, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: "#f8f9fa"
     });
 
-    // Show buttons again
-    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'block');
-
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF('p', 'mm', 'a4');
 
     const imgWidth = 190;
-    const pageHeight = 290;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 15;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
 
-    // Header
-    pdf.setFontSize(20);
-    pdf.text("ONLINE EXAM RESULT", 105, position, { align: "center" });
-    position += 10;
+    // Add title
+    pdf.setFontSize(22);
+    pdf.text("EXAM RESULT REPORT", 105, 20, { align: "center" });
 
-    pdf.setFontSize(14);
-    pdf.text(`Student: ${studentName}`, 20, position);
-    pdf.text(`Roll No: ${studentRoll}`, 120, position);
-    position += 10;
+    pdf.addImage(imgData, 'PNG', 10, 30, imgWidth, imgHeight);
 
-    pdf.setFontSize(16);
-    pdf.text(`Final Score: ${finalScore} / ${totalQuestions}`, 105, position, { align: "center" });
-    position += 10;
-
-    pdf.setFontSize(12);
-    pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
-    position += 15;
-
-    // Add captured image
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 20;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-    }
-
-    // Save with meaningful name
-    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, '_');
-    pdf.save(`${safeName}_Result_${finalScore}_${totalQuestions}.pdf`);
+    const studentName = document.querySelector("#student-info strong").textContent.trim();
+    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
+    pdf.save(`${safeName}_Result.pdf`);
 
     alert("PDF Downloaded Successfully! 🎉");
 }

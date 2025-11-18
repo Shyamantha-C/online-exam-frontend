@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +6,7 @@
     <title>View Results</title>
 
     <!-- Bootstrap -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -46,7 +42,8 @@
     </div>
 
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script src="../admin.js"></script>
 <script>
 if (!localStorage.getItem("adminToken")) {
@@ -76,7 +73,7 @@ loadResults();
 
 <div id="printArea" class="container">
     <div class="text-center my-5">
-        <h1>Your Institute Name - Exam Results</h1>
+        <h1>Manipal Online Assesment - Exam Results</h1>
         <h4>Date: <span id="printDate"></span></h4>
         <p>Total Students: <strong id="totalStudents">0</strong></p>
     </div>
@@ -105,59 +102,52 @@ loadResults();
 
 <script>
 // PRINT FUNCTION — BEAUTIFUL & PROFESSIONAL
-function printResults() {
+async printResults() {
     // Update dates
-    const now = new Date().toLocaleString('en-IN');
-    document.getElementById("printDate").textContent = new Date().toLocaleDateString('en-IN');
-    document.getElementById("generatedDate").textContent = now;
+    const { jsPDF } = window.jspdf;
 
-    // Count total students
-    const total = document.querySelectorAll("#results-table tr").length;
-    document.getElementById("totalStudents").textContent = total;
+    // Wait for table to be fully loaded
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Copy table data
-    const originalRows = document.querySelectorAll("#results-table tr");
-    const printBody = document.getElementById("printTableBody");
-    printBody.innerHTML = "";
+    const table = document.querySelector("#results-table");
+    if (!table || table.rows.length === 0) {
+        alert("No results to download!");
+        return;
+    }
 
-    originalRows.forEach((row, index) => {
-        const cells = row.querySelectorAll("td, th");
-        if (index === 0) return; // skip header if you want
-
-        const newRow = document.createElement("tr");
-        let cellCount = 0;
-
-        cells.forEach((cell, i) => {
-            if (i === 6 || i === 7) return; // skip "Details" and "Actions" columns
-
-            const newCell = document.createElement(i === 0 ? "td" : "td");
-            newCell.innerHTML = cell.innerHTML;
-
-            // Clean up buttons in print
-            if (i === 6 || i === 7) return;
-            if (cell.querySelector("a")) {
-                newCell.textContent = "View Details";
-            }
-            if (cell.querySelector("button")) {
-                newCell.textContent = "";
-            }
-
-            newRow.appendChild(newCell);
-            cellCount++;
-        });
-
-        // Add serial number
-        if (index > 0) {
-            const sr = document.createElement("td");
-            sr.textContent = index;
-            newRow.insertBefore(sr, newRow.firstChild);
-        }
-
-        printBody.appendChild(newRow);
+    const canvas = await html2canvas(table, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff"
     });
 
-    // Trigger print
-    window.print();
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const imgWidth = 190;
+    const pageHeight = 290;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 20;
+
+    // Header
+    pdf.setFontSize(20);
+    pdf.text("INSTITUTE NAME - EXAM RESULTS", 105, 15, { align: "center" });
+    pdf.setFontSize(12);
+    pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
+    position += 15;
+
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + 20;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+    }
+
+    pdf.save(`All_Students_Results_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 </script>
 
