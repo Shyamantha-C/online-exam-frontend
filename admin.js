@@ -150,6 +150,51 @@ async function deleteQuestion(id) {
     }
 }
 
+function uploadStudentsExcel() {
+    const fileInput = document.getElementById("excelFile");
+    const statusDiv = document.getElementById("uploadStatus");
+    
+    if (!fileInput.files[0]) {
+        alert("Please select an Excel file first!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.name.endsWith(".xlsx")) {
+        alert("Only .xlsx files allowed!");
+        return;
+    }
+
+    statusDiv.innerHTML = `<div class="text-info">Uploading & processing... Please wait</div>`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch(`${BASE_URL}/api/admin/upload-students`, {
+        method: "POST",
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "ok") {
+            statusDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>SUCCESS!</strong><br>
+                    ${data.total} students updated successfully!<br>
+                    File: ${file.name}
+                </div>
+            `;
+            fileInput.value = "";
+        } else {
+            statusDiv.innerHTML = `<div class="alert alert-danger">${data.msg}</div>`;
+        }
+    })
+    .catch(() => {
+        statusDiv.innerHTML = `<div class="alert alert-danger">Upload failed!</div>`;
+    });
+}
+
 function loadAllStudents() {
     fetch(`${BASE_URL}/api/admin/students`, {
         headers: { "X-ADMIN-TOKEN": ADMIN_TOKEN }
@@ -202,6 +247,8 @@ if (window.location.href.includes("view-results.html")) {
 if (window.location.href.includes("student-details.html")) {
     document.addEventListener("DOMContentLoaded", loadAllStudents);
 }
+
+
 
 
 // =============================
