@@ -25,152 +25,110 @@
 </div>
 
 <script>
-
-
-// RE-ENTER FULLSCREEN WHEN EXAM LOADS — NEVER LET IT EXIT
+// === 1. FULLSCREEN FOREVER (NEVER EXIT) ===
 const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get("fs") === "1") {
+const attempt_id = urlParams.get("attempt");
+const student_id = localStorage.getItem('student_id');
+
+// Re-enter fullscreen on load
+if (urlParams.get("fs") === "1" || location.href.includes("exam.html")) {
     setTimeout(() => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    }, 300);
+    }, 400);
 }
 
-// If student presses Esc → force back into fullscreen
+// If student presses Esc → FORCE back into fullscreen + warning
 document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement) {
+        reportCheat("You tried to exit fullscreen!");
         setTimeout(() => {
             const elem = document.documentElement;
             if (elem.requestFullscreen) elem.requestFullscreen();
             else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
             else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-        }, 500);
+        }, 300);
     }
 });
 
-const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
-const urlParams = new URLSearchParams(window.location.search);
-const attempt_id = urlParams.get("attempt");
-const student_id = localStorage.getItem('student_id');
-
-let questions = [];
-let currentIndex = 0;
-let answers = {};
+// === 2. ANTI-CHEATING SYSTEM (3 warnings → auto submit) ===
 let cheatCount = 0;
-const MAX_CHEAT = 3;
+const MAX_WARNINGS = 3;
 
-// Force fullscreen immediately
-function goFullScreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-}
-
-// Warning + Auto-submit after 3 violations
-function reportCheat(reason = "Cheating detected") {
+function reportCheat(reason) {
     cheatCount++;
-    
-    if (cheatCount >= MAX_CHEAT) {
-        alert(`MAXIMUM VIOLATIONS REACHED (${cheatCount})\n\n${reason}\n\nYour exam is being submitted automatically for security reasons.`);
+    if (cheatCount >= MAX_WARNINGS) {
+        alert(`MAXIMUM VIOLATIONS! (${cheatCount})\n\n${reason}\n\nExam submitting now for security.`);
         submitExam();
         return;
     }
-
-    alert(`WARNING ${cheatCount}/${MAX_CHEAT}\n\n${reason}\n\nDo not switch tabs, exit fullscreen, copy/paste, or use shortcuts.\nAfter 3 warnings, your exam will be auto-submitted.`);
+    alert(`WARNING ${cheatCount}/${MAX_WARNINGS}\n\n${reason}\n\nDo NOT switch tab, exit fullscreen, or use shortcuts.\nAfter 3 warnings → auto submit.`);
 }
 
-// BLOCK EVERYTHING — PROFESSIONAL LEVEL
+// Block everything
 history.pushState(null, null, location.href);
 window.onpopstate = () => history.go(1);
-
-document.addEventListener("contextmenu", e => { e.preventDefault(); reportCheat("Right-click disabled"); });
-document.addEventListener("copy", e => { e.preventDefault(); reportCheat("Copying disabled"); });
-document.addEventListener("paste", e => { e.preventDefault(); reportCheat("Pasting disabled"); });
-document.addEventListener("cut", e => { e.preventDefault(); reportCheat("Cutting disabled"); });
-document.addEventListener("selectstart", e => e.preventDefault());
+document.addEventListener("contextmenu", e => { e.preventDefault(); reportCheat("Right-click blocked"); });
+document.addEventListener("copy paste cut", e => { e.preventDefault(); reportCheat("Copy/paste blocked"); });
 document.addEventListener("keydown", e => {
-    if (e.ctrlKey || e.altKey || e.key === "F12" || e.key === "PrintScreen" || e.key === "Escape") {
+    if (e.ctrlKey || e.altKey || ["F12", "PrintScreen", "Escape"].includes(e.key)) {
         e.preventDefault();
-        reportCheat("Keyboard shortcuts blocked");
+        reportCheat("Keyboard shortcut blocked");
     }
 });
-
-// Tab switch / minimize
 document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        reportCheat("You switched tab or minimized the window");
-    }
+    if (document.hidden) reportCheat("Tab switch detected!");
 });
+window.onbeforeunload = () => "Leaving will count as cheating!";
 
-// Exit fullscreen
-document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-        reportCheat("You exited fullscreen mode");
-        goFullScreen(); // force back to fullscreen
-    }
-});
+// === 3. LOAD EXAM ===
+const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
+let questions = [], currentIndex = 0, answers = {};
 
-// Warn before refresh/close
-window.onbeforeunload = () => {
-    return "Leaving or refreshing will count as a violation and may submit your exam.";
-};
-
-// Start fullscreen on load
-document.addEventListener("DOMContentLoaded", goFullScreen);
-
-// Load exam
+// Load questions
 fetch(`${BASE_URL}/api/questions_for/${attempt_id}`)
     .then(r => r.json())
     .then(data => {
         questions = data.questions;
-        if (questions.length === 0) return alert("No questions found!");
+        if (questions.length === 0) return alert("No questions!");
         renderQuestion();
         startOverallTimer(data.total_time);
     })
     .catch(() => alert("Failed to load exam"));
 
-// Render current question
+// === 4. RENDER QUESTION ===
 function renderQuestion() {
     const q = questions[currentIndex];
-
     document.getElementById('qbox').innerHTML = `
-        <div class="card-header bg-danger text-white text-center py-3">
-            <h5 class="mb-0">
-                Question ${currentIndex + 1} of ${questions.length}
-                <span class="badge bg-light text-danger fs-6">⏱ <span id="perQTimer">${q.per_question_time}</span>s</span>
-                <span class="badge bg-warning text-dark ms-2">Warnings: ${cheatCount}/${MAX_CHEAT}</span>
-            </h5>
-        </div>
-
-        <div class="card-body p-4">
-            <h4 class="mb-4">${q.text}</h4>
-
-            <div class="options">
-                ${['A', 'B', 'C', 'D'].map(letter => `
-                    <div class="form-check mb-3 p-3 border rounded bg-light">
-                        <input class="form-check-input" type="radio" name="option" id="opt${letter}" value="${letter}">
-                        <label class="form-check-label fs-5" for="opt${letter}">
-                            <strong>${letter}.</strong> ${q.options[letter]}
-                        </label>
-                    </div>
-                `).join('')}
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h5>Question ${currentIndex + 1} of ${questions.length}
+                    <span class="badge bg-light text-dark ms-2">⏱ <span id="perQTimer">${q.per_question_time}</span>s</span>
+                    ${cheatCount > 0 ? `<span class="badge bg-danger ms-2">Warnings: ${cheatCount}/${MAX_WARNINGS}</span>` : ''}
+                </h5>
             </div>
-
-            <div class="text-center mt-4">
-                <button class="btn btn-lg px-5 fw-bold ${
-                    currentIndex === questions.length - 1 ? 'btn-danger' : 'btn-success'
-                }" onclick="goNext()">
-                    ${currentIndex === questions.length - 1 ? 'Submit Exam' : 'Next →'}
-                </button>
+            <div class="card-body p-4">
+                <h4 class="mb-4">${q.text}</h4>
+                <div class="options">
+                    ${['A','B','C','D'].map(l => `
+                        <div class="form-check mb-3 p-3 border rounded bg-light">
+                            <input class="form-check-input" type="radio" name="option" value="${l}" id="opt${l}">
+                            <label class="form-check-label fs-5" for="opt${l}">
+                                <strong>${l}.</strong> ${q.options[l]}
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-lg px-5 fw-bold ${currentIndex === questions.length-1 ? 'btn-danger' : 'btn-success'}"
+                            onclick="goNext()">
+                        ${currentIndex === questions.length-1 ? 'Submit Exam' : 'Next →'}
+                    </button>
+                </div>
+                ${cheatCount > 0 ? `<div class="alert alert-danger mt-3 text-center"><strong>STOP CHEATING! Warning ${cheatCount}/3</strong></div>` : ''}
             </div>
-
-            ${cheatCount > 0 ? `
-            <div class="alert alert-danger text-center mt-3">
-                <strong>WARNING ${cheatCount}/${MAX_CHEAT}</strong> - Stop cheating or exam will auto-submit!
-            </div>` : ''}
         </div>
     `;
 
@@ -181,6 +139,7 @@ function renderQuestion() {
     });
 }
 
+// === 5. NAVIGATION & TIMERS ===
 function goNext() {
     const selected = document.querySelector('input[name="option"]:checked');
     answers[questions[currentIndex].id] = selected ? selected.value : null;
@@ -193,53 +152,43 @@ function goNext() {
     renderQuestion();
 }
 
-function startPerQuestionTimer(seconds) {
-    let time = seconds;
+function startPerQuestionTimer(sec) {
+    let t = sec;
     const el = document.getElementById('perQTimer');
-    const interval = setInterval(() => {
-        time--;
-        el.textContent = time;
-        if (time <= 0) {
-            clearInterval(interval);
-            goNext();
-        }
+    const int = setInterval(() => {
+        t--;
+        el.textContent = t;
+        if (t <= 0) { clearInterval(int); goNext(); }
     }, 1000);
 }
 
-function startOverallTimer(totalSeconds) {
-    let time = totalSeconds;
+function startOverallTimer(totalSec) {
+    let t = totalSec;
     const el = document.getElementById('overallTimer');
-    const interval = setInterval(() => {
-        const m = String(Math.floor(time / 60)).padStart(2, '0');
-        const s = String(time % 60).padStart(2, '0');
+    setInterval(() => {
+        if (t <= 0) { alert("Time Over!"); submitExam(); }
+        const m = String(Math.floor(t/60)).padStart(2,'0');
+        const s = String(t%60).padStart(2,'0');
         el.textContent = `${m}:${s}`;
-        if (time <= 0) {
-            clearInterval(interval);
-            alert("Time Over!");
-            submitExam();
-        }
-        time--;
+        t--;
     }, 1000);
 }
 
+// === 6. SUBMIT EXAM (NO SCORE SHOWN) ===
 function submitExam() {
     fetch(`${BASE_URL}/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            attempt_id: parseInt(attempt_id),
-            answers: answers
-        })
+        body: JSON.stringify({ attempt_id: parseInt(attempt_id), answers })
     })
     .then(r => r.json())
-    .then(res => {
-        alert(`Exam Submitted! \nWarnings: ${cheatCount}`);
+    .then(() => {
         localStorage.removeItem('attempt_id');
-        window.location.href = `exam-complete.html?score=${res.score}&total=${questions.length}&warnings=${cheatCount}`;
+        alert("Exam submitted successfully!\n\nThank you.\nResult will be declared by admin soon.");
+        window.location.href = "thank-you.html";
     })
-    .catch(() => alert("Submission failed"));
+    .catch(() => alert("Submission failed. Contact admin."));
 }
-</script>
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
