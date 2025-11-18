@@ -102,26 +102,25 @@ loadResults();
 
 <script>
 // PRINT FUNCTION — BEAUTIFUL & PROFESSIONAL
-async printResults() {
-    // Update dates
-    const { jsPDF } = window.jspdf;
+async function downloadAllResultsPDF() {
+    // WAIT FOR TABLE TO LOAD FULLY
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Wait for table to be fully loaded
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const table = document.querySelector("#results-table");
-    if (!table || table.rows.length === 0) {
-        alert("No results to download!");
+    const table = document.querySelector("#results-table") || document.querySelector("#studentsList");
+    if (!table || table.rows.length <= 1) {
+        alert("No data to download!");
         return;
     }
 
     const canvas = await html2canvas(table, {
         scale: 2,
         useCORS: true,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
+        logging: false
     });
 
     const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
 
     const imgWidth = 190;
@@ -130,12 +129,12 @@ async printResults() {
     let heightLeft = imgHeight;
     let position = 20;
 
-    // Header
+    // Title
     pdf.setFontSize(20);
-    pdf.text("INSTITUTE NAME - EXAM RESULTS", 105, 15, { align: "center" });
+    pdf.text("EXAM RESULTS - ALL STUDENTS", 105, 15, { align: "center" });
     pdf.setFontSize(12);
-    pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
-    position += 15;
+    pdf.text(`Generated: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
+    position += 10;
 
     pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
@@ -147,7 +146,7 @@ async printResults() {
         heightLeft -= pageHeight;
     }
 
-    pdf.save(`All_Students_Results_${new Date().toISOString().slice(0,10)}.pdf`);
+    pdf.save(`Exam_Results_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 </script>
 

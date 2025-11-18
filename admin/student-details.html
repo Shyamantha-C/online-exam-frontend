@@ -89,7 +89,7 @@ if (!localStorage.getItem("adminToken")) {
 }
 
 // Load all students
-fetch("https://online-exam-backend-f3rp.onrender.com/api/admin/students", {
+fetch("https://online-exam-backend-f3rp.onrender.com/api/results", {
     headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
 })
 .then(r => r.json())
