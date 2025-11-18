@@ -12,17 +12,26 @@
       <h3 class="mb-3">Register for Exam</h3>
       <div id="msg"></div>
       <div class="mb-3">
-        <label>Name</label>
-        <input id="name" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label>Email</label>
-        <input id="email" class="form-control" type="email">
-      </div>
-      <div class="mb-3">
-        <label>Phone (optional)</label>
-        <input id="phone" class="form-control">
-      </div>
+  
+<div class="mb-3">
+  <label>Name</label>
+  <input id="name" class="form-control">
+</div>
+
+<label>Roll Number</label>
+  <input id="roll_no" class="form-control">
+</div>
+
+<div class="mb-3">
+  <label>Email</label>
+  <input id="email" class="form-control" type="email">
+</div>
+
+<div class="mb-3">
+  <label>Phone (optional)</label>
+  <input id="phone" class="form-control">
+</div>
+
       <button class="btn btn-primary w-100" onclick="registerStudent()">Register</button>
       <div class="mt-3 text-center">
         <a href="student-login.html">Already have account? Login</a>
@@ -35,25 +44,33 @@
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 
 async function registerStudent() {
+  const roll_no = document.getElementById("roll_no").value.trim();
   const name = document.getElementById("name").value.trim();
   const email = document.getElementById("email").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const msg = document.getElementById("msg");
   msg.innerHTML = "";
 
+  if (!roll_no || !name || !email) {
+    msg.innerHTML = `<div class="alert alert-danger">Please fill all required fields.</div>`;
+    return;
+  }
+
   const res = await fetch(`${BASE_URL}/api/student/register`, {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ name, email, phone })
+    body: JSON.stringify({ roll_no, name, email, phone })
   });
 
   const data = await res.json();
+
   if (data.status === "ok") {
-    msg.innerHTML = `<div class="alert alert-success">Registered. Credentials emailed. Please check your email.</div>`;
+    msg.innerHTML = `<div class="alert alert-success">Registered. Credentials emailed.</div>`;
   } else {
-    msg.innerHTML = `<div class="alert alert-danger">${data.msg || 'Registration failed'}</div>`;
+    msg.innerHTML = `<div class="alert alert-danger">${data.msg}</div>`;
   }
 }
+
 </script>
 </body>
 </html>
