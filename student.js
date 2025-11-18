@@ -1,7 +1,3 @@
-# student.temp.js
-"""
-Handles login using backend temp API
-"""
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 
 async function studentLogin() {
