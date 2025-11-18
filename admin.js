@@ -150,6 +150,59 @@ async function deleteQuestion(id) {
     }
 }
 
+function loadAllStudents() {
+    fetch(`${BASE_URL}/api/admin/students`, {
+        headers: { "X-ADMIN-TOKEN": ADMIN_TOKEN }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById("studentsList") || document.getElementById("studentsTableBody");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+        if (!data.students || data.students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5">No students found</td></tr>`;
+            return;
+        }
+
+        data.students.forEach((s, i) => {
+            const status = s.status === "Completed" 
+                ? `<span class="badge bg-success px-3 py-2">Completed</span>`
+                : `<span class="badge bg-warning px-3 py-2 text-dark">In Progress</span>`;
+
+            const score = s.score !== null ? `<strong class="text-success">${s.score}</strong>` : "—";
+
+            const row = `
+                <tr>
+                    <td class="text-center"><strong>${i + 1}</strong></td>
+                    <td><strong>${s.roll_no || "—"}</strong></td>
+                    <td class="fw-bold">${s.name}</td>
+                    <td>${s.email}</td>
+                    <td>${s.phone || "—"}</td>
+                    <td>${score}</td>
+                    <td>${status}</td>
+                    <td><small>${s.started_at ? new Date(s.started_at).toLocaleString('en-IN') : "—"}</small></td>
+                    <td>
+                        <a href="student-result-detail.html?attempt=${s.attempt_id}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    })
+    .catch(() => {
+        alert("Failed to load students");
+    });
+}
+
+// Auto-run on page load
+if (window.location.href.includes("view-results.html")) {
+    document.addEventListener("DOMContentLoaded", loadResults);
+}
+if (window.location.href.includes("student-details.html")) {
+    document.addEventListener("DOMContentLoaded", loadAllStudents);
+}
+
 
 // =============================
 // LOAD RESULTS LIST
