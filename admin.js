@@ -155,34 +155,52 @@ async function deleteQuestion(id) {
 // LOAD RESULTS LIST
 // =============================
 async function loadResults() {
-    const table = document.getElementById("results-table");
-    table.innerHTML = "";
+    fetch("https://online-exam-backend-f3rp.onrender.com/api/results", {
+        headers: {
+            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById("results-table");
+        if (!tbody) {
+            console.error("Table body not found!");
+            return;
+        }
 
-    const response = await fetch(`${BASE_URL}/api/results`, {
-        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
-    });
+        if (!data.results || data.results.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No results yet</td></tr>`;
+            return;
+        }
 
-    const data = await response.json();
+        tbody.innerHTML = "";  // clear first
 
-    if (!data.results || data.results.length === 0) {
-        table.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No results yet</td></tr>`;
-        return;
-    }
-
-    data.results.forEach((r, index) => {
-        const row = `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${r.roll_no}</td>
-            <td>${r.name}</td>
-            <td>${r.score}</td>
-            <td>${new Date(r.started_at).toLocaleString()}</td>
-            <td>${new Date(r.finished_at).toLocaleString()}</td>
-            <td>
-                <a href="result-detail.html?attempt=${r.attempt_id}" class="btn btn-sm btn-info">Details</a>
-            </td>
-        </tr>`;
-        table.innerHTML += row;
+        data.results.forEach((res, i) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${res.roll_no || "—"}</td>
+                <td>${res.name || "—"}</td>
+                <td><strong>${res.score}</strong></td>
+                <td>${new Date(res.started_at).toLocaleString()}</td>
+                <td>${res.finished_at ? new Date(res.finished_at).toLocaleString() : "—"}</td>
+                <td>
+                    <a href="student-result-detail.html?attempt=${res.attempt_id}" class="btn btn-sm btn-primary">
+                        View Details
+                    </a>
+                </td>
+                <td>
+                    <button onclick="deleteAttempt(${res.attempt_id})" class="btn btn-sm btn-danger">
+                        Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Failed to load results");
     });
 }
 
