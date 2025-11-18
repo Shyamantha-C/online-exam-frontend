@@ -163,11 +163,15 @@ function submitExam() {
     .then(r => r.json())
     .then(res => {
         localStorage.removeItem('attempt_id');
-        alert(`🎉 Exam Submitted!\nYour Score: ${res.score} / ${questions.length}`);
-        window.location.href = `exam-complete.html?score=${res.score}&total=${questions.length}`;
+        
+        // SUCCESS MESSAGE — NO SCORE SHOWN!
+        alert("✅ Exam submitted successfully!\n\nThank you for attempting the exam.\nYour result will be declared by the admin soon.");
+
+        // Redirect to a simple thank you page (no score)
+        window.location.href = "thank-you.html";
     })
     .catch(() => {
-        alert("Submission failed. Try again.");
+        alert("⚠️ Submission failed. Please contact admin.");
     });
 }
 </script>

@@ -1,47 +1,62 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-
-    <!-- Bootstrap -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .card { max-width: 500px; margin: 80px auto; border-radius: 20px; }
+        .btn { border-radius: 50px; font-size: 1.3rem; padding: 15px; }
+    </style>
 </head>
+<body>
 
-<body class="bg-light">
+<div class="card shadow-lg border-0">
+    <div class="card-body text-center p-5">
+        <h2 class="text-primary mb-4">Welcome Back!</h2>
+        <h3 class="mb-5" id="sname"></h3>
 
-<div class="container py-5">
+        <button class="btn btn-success w-75 mb-3" onclick="startExam()">
+            Start Exam Now
+        </button>
 
-    <h2 class="text-center">Welcome, <span id="sname"></span></h2>
+        <br>
 
-    <div class="text-center mt-4">
-        <button class="btn btn-success w-50" onclick="startExam()">Start Exam</button>
+        <button class="btn btn-danger w-75" onclick="studentLogout()">
+            Logout
+        </button>
     </div>
-
 </div>
-
-<div class="text-center mt-3">
-    <button class="btn btn-danger w-50" onclick="studentLogout()">Logout</button>
-</div>
-
 
 <script>
+    // Check if student is logged in
     if (!localStorage.getItem("student_id")) {
+        alert("Please login first!");
         window.location.href = "student-login.html";
     }
 
-    document.getElementById("sname").innerText = localStorage.getItem("student_name");
+    // Show student name
+    document.getElementById("sname").innerText = localStorage.getItem("student_name") || "Student";
 
+    // Start Exam Button
     function startExam() {
         window.location.href = "start-exam.html";
     }
 
-    
+    // LOGOUT FUNCTION — PERFECT & SAFE
+    function studentLogout() {
+        if (confirm("Are you sure you want to logout?")) {
+            // Clear all student data
+            localStorage.removeItem("student_id");
+            localStorage.removeItem("student_name");
+            localStorage.removeItem("attempt_id");
+
+            alert("Logged out successfully!");
+            window.location.href = "student-login.html";
+        }
+    }
 </script>
 
 </body>
