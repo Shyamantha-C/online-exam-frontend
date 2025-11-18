@@ -1,37 +1,29 @@
+# student.temp.js
+"""
+Handles login using backend temp API
+"""
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 
 async function studentLogin() {
-    const roll = document.getElementById("roll").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const msg = document.getElementById("msg");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
 
-    if (!roll || !password) {
-        msg.innerHTML = `<span class="text-danger">Please enter both fields.</span>`;
-        return;
-    }
+  msg.innerHTML = "";
 
-    const response = await fetch(`${BASE_URL}/api/student/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: roll, password: password })
-    });
+  const res = await fetch(`${BASE_URL}/api/student/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
 
-    const data = await response.json();
+  const data = await res.json();
 
-    if (data.status === "ok") {
-        // Save student data
-        localStorage.setItem("student_id", data.student_id);
-        localStorage.setItem("student_name", data.name);
-
-        // Redirect to dashboard
-        window.location.href = "student-dashboard.html";
-    } else {
-        msg.innerHTML = `<span class="text-danger">Invalid credentials</span>`;
-    }
-}
-
-function studentLogout() {
-    localStorage.removeItem("student_id");
-    localStorage.removeItem("student_name");
-    window.location.href = "student-login.html";
+  if (data.status === "ok") {
+    localStorage.setItem("student_id", data.student_id);
+    localStorage.setItem("student_name", data.name);
+    window.location.href = "student-dashboard.html";
+  } else {
+    msg.innerHTML = `<span class='text-danger'>${data.msg}</span>`;
+  }
 }

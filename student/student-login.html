@@ -1,52 +1,26 @@
+# student-login.temp.html
+"""
+Minimal login UI (email + phone)
+"""
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Login</title>
-
-    <!-- Bootstrap -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Student Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-
 <body class="bg-light">
-
 <div class="container py-5">
-
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-
-            <div class="card shadow p-4">
-
-                <h3 class="text-center mb-4">Student Login</h3>
-
-                <div id="msg" class="text-center mb-3"></div>
-
-                <div class="mb-3">
-                    <label class="form-label">username</label>
-                    <input id="username" type="text" class="form-control" placeholder="Enter your username">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input id="password" type="password" class="form-control" placeholder="Enter your Password">
-                </div>
-
-                <button class="btn btn-primary w-100" onclick="studentLogin()">Login</button>
-
-                <div class="text-center mt-3">
-                    <a href="../admin/admin-login.html">Admin Login</a>
-                </div>
-
-            </div>
-
-        </div>
+  <div class="col-md-5 mx-auto">
+    <div class="card shadow p-4">
+      <h3 class="text-center mb-3">Student Login</h3>
+      <div id="msg" class="text-center mb-2"></div>
+      <input id="email" class="form-control mb-3" placeholder="Email">
+      <input id="password" class="form-control mb-3" placeholder="Phone Number" type="password">
+      <button class="btn btn-primary w-100" onclick="studentLogin()">Login</button>
     </div>
-
+  </div>
 </div>
-
-<script src="student.js"></script>
+<script src="student.temp.js"></script>
 </body>
 </html>
