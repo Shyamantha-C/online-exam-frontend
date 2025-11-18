@@ -1,57 +1,102 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Start Exam</title>
-
-    <!-- Bootstrap -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet">
+    <title>Starting Exam...</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+        .btn-fullscreen {
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+        }
+    </style>
 </head>
+<body>
 
-<body class="bg-light">
+<div class="card text-center border-0">
+    <div class="card-body p-5">
+        <h1 class="mb-4">Ready for Exam?</h1>
+        <p class="lead fs-4 mb-5">Click the button below to enter fullscreen mode and start the exam.</p>
+        
+        <button id="startBtn" class="btn btn-success btn-lg btn-fullscreen">
+            <span id="btnText">Go Fullscreen & Start Exam</span>
+        </button>
 
-<div class="container py-5">
-    <h3 class="text-center mb-4">Start Exam</h3>
-    <div id="msg" class="text-center mb-4"></div>
-
-    <div class="text-center">
-        <button class="btn btn-success btn-lg" onclick="startExamNow()">Start Now</button>
+        <div class="mt-4 text-warning fw-bold">
+            <small>Do not exit fullscreen during the exam</small>
+        </div>
     </div>
 </div>
 
 <script>
-const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
+// Prevent going back
+history.pushState(null, null, location.href);
+window.onpopstate = () => history.go(1);
 
-if (!localStorage.getItem("student_id")) {
-    window.location.href = "student-login.html";
-}
+document.getElementById("startBtn").onclick = async () => {
+    const btn = document.getElementById("startBtn");
+    const btnText = document.getElementById("btnText");
 
-async function startExamNow() {
-    const student_id = localStorage.getItem("student_id");
-    const msg = document.getElementById("msg");
+    btn.disabled = true;
+    btnText.innerText = "Entering fullscreen...";
 
-    const response = await fetch(`${BASE_URL}/api/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: student_id })
-    });
-
-    const data = await response.json();
-
-    if (data.status === "error" && data.msg === "Already attempted") {
-        msg.innerHTML = `<span class='text-danger'>You have already attempted this exam.</span>`;
+    // Request fullscreen
+    try {
+        if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            await document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            await document.documentElement.msRequestFullscreen();
+        }
+    } catch (err) {
+        alert("Fullscreen is required to start the exam.\nPlease allow fullscreen and try again.");
+        btn.disabled = false;
+        btnText.innerText = "Go Fullscreen & Start Exam";
         return;
     }
 
-    // success → go to exam page
-    const attempt_id = data.attempt_id;
-    window.location.href = `exam.html?attempt=${attempt_id}`;
-}
+    btnText.innerText = "Creating your exam...";
+
+    // Now create attempt and go to exam
+    const student_id = localStorage.getItem("student_id");
+
+    fetch("https://online-exam-backend-f3rp.onrender.com/api/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "ok") {
+            localStorage.setItem("attempt_id", data.attempt_id);
+            window.location.href = `exam.html?attempt=${data.attempt_id}`;
+        } else {
+            alert("Error: " + data.msg);
+            location.reload();
+        }
+    })
+    .catch(() => {
+        alert("Failed to start exam. Check internet connection.");
+        btn.disabled = false;
+        btnText.innerText = "Try Again";
+    });
+};
 </script>
 
 </body>
