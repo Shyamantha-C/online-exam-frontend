@@ -25,6 +25,31 @@
 </div>
 
 <script>
+
+
+// RE-ENTER FULLSCREEN WHEN EXAM LOADS — NEVER LET IT EXIT
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("fs") === "1") {
+    setTimeout(() => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    }, 300);
+}
+
+// If student presses Esc → force back into fullscreen
+document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+        setTimeout(() => {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        }, 500);
+    }
+});
+
 const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 const urlParams = new URLSearchParams(window.location.search);
 const attempt_id = urlParams.get("attempt");

@@ -82,15 +82,17 @@ document.getElementById("startBtn").onclick = async () => {
         body: JSON.stringify({ student_id })
     })
     .then(r => r.json())
-    .then(data => {
+   .then(data => {
         if (data.status === "ok") {
             localStorage.setItem("attempt_id", data.attempt_id);
-            window.location.href = `exam.html?attempt=${data.attempt_id}`;
+        
+            // THIS LINE IS THE MAGIC — PASS FULLSCREEN FLAG
+             window.location.href = `exam.html?attempt=${data.attempt_id}&fs=1`;
         } else {
             alert("Error: " + data.msg);
             location.reload();
-        }
-    })
+    }
+})
     .catch(() => {
         alert("Failed to start exam. Check internet connection.");
         btn.disabled = false;

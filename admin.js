@@ -185,7 +185,7 @@ async function loadResults() {
                 <td>${new Date(res.started_at).toLocaleString()}</td>
                 <td>${res.finished_at ? new Date(res.finished_at).toLocaleString() : "—"}</td>
                 <td>
-                    <a href="student-result-detail.html?attempt=${res.attempt_id}" class="btn btn-sm btn-primary">
+                    <a href="result-detail.html?attempt=${res.attempt_id}" class="btn btn-sm btn-primary">
                         View Details
                     </a>
                 </td>

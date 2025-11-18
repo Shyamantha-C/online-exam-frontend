@@ -56,5 +56,110 @@ if (!localStorage.getItem("adminToken")) {
 loadResults();
 </script>
 
+<!-- PRINT RESULT BUTTON -->
+<div class="text-center my-5">
+    <button onclick="printResults()" class="btn btn-primary btn-lg px-5 shadow">
+        🖨️ Print All Results
+    </button>
+</div>
+
+<style>
+@media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+    .table { font-size: 14px; }
+    .table th, .table td { padding: 8px !important; }
+}
+</style>
+
+<div id="printArea" class="container">
+    <div class="text-center my-5">
+        <h1>Your Institute Name - Exam Results</h1>
+        <h4>Date: <span id="printDate"></span></h4>
+        <p>Total Students: <strong id="totalStudents">0</strong></p>
+    </div>
+
+    <table class="table table-bordered table-striped" id="printTable">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Score</th>
+                <th>Started At</th>
+                <th>Finished At</th>
+            </tr>
+        </thead>
+        <tbody id="printTableBody">
+            <!-- Filled by JS -->
+        </tbody>
+    </table>
+
+    <div class="text-center mt-5">
+        <p><strong>Generated on:</strong> <span id="generatedDate"></span></p>
+        <p>Signature: _________________________</p>
+    </div>
+</div>
+
+<script>
+// PRINT FUNCTION — BEAUTIFUL & PROFESSIONAL
+function printResults() {
+    // Update dates
+    const now = new Date().toLocaleString('en-IN');
+    document.getElementById("printDate").textContent = new Date().toLocaleDateString('en-IN');
+    document.getElementById("generatedDate").textContent = now;
+
+    // Count total students
+    const total = document.querySelectorAll("#results-table tr").length;
+    document.getElementById("totalStudents").textContent = total;
+
+    // Copy table data
+    const originalRows = document.querySelectorAll("#results-table tr");
+    const printBody = document.getElementById("printTableBody");
+    printBody.innerHTML = "";
+
+    originalRows.forEach((row, index) => {
+        const cells = row.querySelectorAll("td, th");
+        if (index === 0) return; // skip header if you want
+
+        const newRow = document.createElement("tr");
+        let cellCount = 0;
+
+        cells.forEach((cell, i) => {
+            if (i === 6 || i === 7) return; // skip "Details" and "Actions" columns
+
+            const newCell = document.createElement(i === 0 ? "td" : "td");
+            newCell.innerHTML = cell.innerHTML;
+
+            // Clean up buttons in print
+            if (i === 6 || i === 7) return;
+            if (cell.querySelector("a")) {
+                newCell.textContent = "View Details";
+            }
+            if (cell.querySelector("button")) {
+                newCell.textContent = "";
+            }
+
+            newRow.appendChild(newCell);
+            cellCount++;
+        });
+
+        // Add serial number
+        if (index > 0) {
+            const sr = document.createElement("td");
+            sr.textContent = index;
+            newRow.insertBefore(sr, newRow.firstChild);
+        }
+
+        printBody.appendChild(newRow);
+    });
+
+    // Trigger print
+    window.print();
+}
+</script>
+
 </body>
 </html>
