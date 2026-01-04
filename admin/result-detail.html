@@ -3,143 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Result Details</title>
+    <title>Result Detail - Student Performance</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; }
-        }
-        .correct { color: green; font-weight: bold; }
-        .wrong { color: red; font-weight: bold; }
-        .skipped { color: orange; font-weight: bold; }
+        body { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 40px; border-radius: 20px 20px 0 0; }
+        .table { background: #1e293b; border-radius: 15px; overflow: hidden; }
+        .table th { background: #6366f1; color: white; }
+        .correct { background-color: #10b981 !important; color: white; }
+        .wrong { background-color: #ef4444 !important; color: white; }
+        .total-row { background: #1e40af !important; font-size: 1.4rem; }
+        .print-btn { border-radius: 50px; padding: 15px 50px; font-size: 1.3rem; }
+        @media print { body { background: white; color: black; } .no-print { display: none; } }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container py-4">
+<div class="container mt-4">
+    <div class="card shadow-lg border-0">
+        <!-- HEADER WITH STUDENT NAME -->
+        <div class="header text-center">
+            <h1 class="display-4 fw-bold mb-2" id="studentName">Loading...</h1>
+            <p class="lead fs-3">Detailed Performance Report</p>
+        </div>
 
-    <div class="text-center mb-4">
-        <h2 class="fw-bold">Student Result Details</h2>
-        <p class="text-muted">Detailed answer-wise report</p>
+        <!-- TABLE -->
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>Q.No</th>
+                            <th>Question</th>
+                            <th>Correct Option</th>
+                            <th>Marks/Question</th>
+                            <th>Chosen Option</th>
+                            <th>Marks Obtained</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTable">
+                        <!-- Filled by JS -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row text-white">
+                            <td colspan="5" class="text-end fw-bold fs-4">TOTAL MARKS OBTAINED</td>
+                            <td colspan="2" id="totalMarks" class="fw-bold fs-3">Calculating...</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- PRINT BUTTON + BACK -->
+        <div class="card-footer text-center py-4 bg-dark no-print">
+            <button onclick="magicPrint()" class="btn btn-success print-btn shadow-lg fw-bold">
+                🖨️ PRINT / DOWNLOAD RESULT PDF
+            </button>
+            <button onclick="history.back()" class="btn btn-secondary print-btn ms-3">
+                ← BACK TO RESULTS
+            </button>
+        </div>
     </div>
-
-    <div id="student-info" class="alert alert-info text-center fs-5"></div>
-
-    <div id="result-content">
-        <table class="table table-bordered table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th width="5%">#</th>
-                    <th width="40%">Question</th>
-                    <th width="15%">Correct</th>
-                    <th width="15%">Selected</th>
-                    <th width="10%">Status</th>
-                </tr>
-            </thead>
-            <tbody id="detail-table"></tbody>
-        </table>
-    </div>
-
-    <div class="text-center mt-4 no-print">
-        <button onclick="downloadPDF()" class="btn btn-success btn-lg px-5 shadow">
-            📥 Download Result as PDF
-        </button>
-        <br><br>
-        <a href="view-result.html" class="btn btn-secondary">⬅ Back to All Results</a>
-    </div>
-
 </div>
 
+<!-- PRINT KA JAADU (WO HI JO 100% KAAM KARTA HAI) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
-// Admin check
-if (!localStorage.getItem("adminToken")) {
-    window.location.href = "admin-login.html";
+async function magicPrint() {
+    await new Promise(r => setTimeout(r, 1000));
+    const { jsPDF } = window.jspdf;
+    const canvas = await html2canvas(document.body, { 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgWidth = 210;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    pdf.save(`Result_${document.getElementById("studentName").innerText.split("\n")[0].replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
 }
+</script>
 
-const params = new URLSearchParams(window.location.search);
-const attempt_id = params.get("attempt");
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const attempt_id = urlParams.get("attempt");
 
-let studentName = "";
-let studentRoll = "";
-let finalScore = 0;
-let totalQuestions = 0;
-
-loadSingleResult(attempt_id);
-
-async function loadSingleResult(id) {
-    const res = await fetch(`https://online-exam-backend-f3rp.onrender.com/api/admin/result/${id}`);
-    const data = await res.json();
-
-    studentName = data.student.name;
-    studentRoll = data.student.roll_no || "N/A";
-    finalScore = data.student.score;
-    totalQuestions = data.answers.length;
-
-    document.getElementById("student-info").innerHTML = `
-        <strong>${studentName}</strong> (Roll No: ${studentRoll})<br>
-        Score: <strong>${finalScore} / ${totalQuestions}</strong> 
-        | Exam Completed: ${new Date(data.student.finished_at).toLocaleString()}
+fetch(`https://online-exam-backend-f3rp.onrender.com/api/admin/result/${attempt_id}`, {
+    headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
+})
+.then(r => r.json())
+.then(data => {
+    document.getElementById("studentName").innerHTML = `
+        ${data.student.name || "Student"}<br>
+        <small class="text-light">Roll No: ${data.student.roll_no || "—"} | Attempt ID: ${attempt_id}</small>
     `;
 
-    const tbody = document.getElementById("detail-table");
-    tbody.innerHTML = "";
+    const tbody = document.getElementById("resultTable");
+    let totalObtained = 0;
+    const marksPerQuestion = 1;
 
     data.answers.forEach((ans, i) => {
+        const isCorrect = ans.selected && ans.selected.toUpperCase() === ans.correct.toUpperCase();
+        const marksGot = isCorrect ? marksPerQuestion : 0;
+        totalObtained += marksGot;
+
         const row = document.createElement("tr");
+        row.className = isCorrect ? "correct" : ans.selected ? "wrong" : "";
         row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${ans.question}</td>
-            <td class="text-success fw-bold">${ans.correct}</td>
-            <td class="${ans.status === 'Correct' ? 'text-success' : ans.status === 'Wrong' ? 'text-danger' : 'text-warning'} fw-bold">
-                ${ans.selected || "—"}
-            </td>
+            <td class="fw-bold">${i + 1}</td>
+            <td class="text-start">${ans.question}</td>
+            <td class="fw-bold text-success">${ans.correct}</td>
+            <td>${marksPerQuestion}</td>
+            <td class="fw-bold">${ans.selected || "—"}</td>
+            <td class="fw-bold">${marksGot}</td>
             <td>
-                <span class="badge ${ans.status === 'Correct' ? 'bg-success' : ans.status === 'Wrong' ? 'bg-danger' : 'bg-warning'}">
-                    ${ans.status}
+                <span class="badge ${isCorrect ? 'bg-success' : ans.selected ? 'bg-danger' : 'bg-warning text-dark'} fs-6 px-3">
+                    ${isCorrect ? 'CORRECT ✓' : ans.selected ? 'WRONG ✗' : 'SKIPPED'}
                 </span>
             </td>
         `;
         tbody.appendChild(row);
     });
-}
 
-// MAIN FUNCTION — DOWNLOAD BEAUTIFUL PDF
-async function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-
-    // Wait a bit for everything to render
-    await new Promise(r => setTimeout(r, 800));
-
-    const content = document.body;
-
-    const canvas = await html2canvas(content, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#f8f9fa"
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF('p', 'mm', 'a4');
-
-    const imgWidth = 190;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-
-    // Add title
-    pdf.setFontSize(22);
-    pdf.text("EXAM RESULT REPORT", 105, 20, { align: "center" });
-
-    pdf.addImage(imgData, 'PNG', 10, 30, imgWidth, imgHeight);
-
-    const studentName = document.querySelector("#student-info strong").textContent.trim();
-    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
-    pdf.save(`${safeName}_Result.pdf`);
-
-    alert("PDF Downloaded Successfully! 🎉");
-}
+    document.getElementById("totalMarks").innerHTML = `
+        <span class="text-warning">${totalObtained}</span> / ${data.answers.length}
+    `;
+})
+.catch(() => {
+    document.body.innerHTML = "<h1 class='text-center text-danger mt-5'>Failed to load result</h1>";
+});
 </script>
 
 </body>

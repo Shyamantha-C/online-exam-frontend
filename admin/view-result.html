@@ -53,102 +53,37 @@ if (!localStorage.getItem("adminToken")) {
 loadResults();
 </script>
 
-<!-- PRINT RESULT BUTTON -->
+<!-- YE BUTTON KAHIN BHI DAAL DO (student-result-detail.html mein) -->
 <div class="text-center my-5">
-    <button onclick="printResults()" class="btn btn-primary btn-lg px-5 shadow">
-        🖨️ Print All Results
+    <button onclick="magicPrint()" class="btn btn-success btn-lg px-5 shadow-lg fw-bold">
+        🖨️ PRINT / DOWNLOAD RESULT PDF
     </button>
 </div>
 
-<style>
-@media print {
-    body * { visibility: hidden; }
-    #printArea, #printArea * { visibility: visible; }
-    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-    .no-print { display: none !important; }
-    .table { font-size: 14px; }
-    .table th, .table td { padding: 8px !important; }
-}
-</style>
 
-<div id="printArea" class="container">
-    <div class="text-center my-5">
-        <h1>Manipal Online Assesment - Exam Results</h1>
-        <h4>Date: <span id="printDate"></span></h4>
-        <p>Total Students: <strong id="totalStudents">0</strong></p>
-    </div>
-
-    <table class="table table-bordered table-striped" id="printTable">
-        <thead class="table-dark">
-            <tr>
-                <th>#</th>
-                <th>Roll No</th>
-                <th>Name</th>
-                <th>Score</th>
-                <th>Started At</th>
-                <th>Finished At</th>
-            </tr>
-        </thead>
-        <tbody id="printTableBody">
-            <!-- Filled by JS -->
-        </tbody>
-    </table>
-
-    <div class="text-center mt-5">
-        <p><strong>Generated on:</strong> <span id="generatedDate"></span></p>
-        <p>Signature: _________________________</p>
-    </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
-// PRINT FUNCTION — BEAUTIFUL & PROFESSIONAL
-async function downloadAllResultsPDF() {
-    // WAIT FOR TABLE TO LOAD FULLY
-    await new Promise(resolve => setTimeout(resolve, 1500));
+async function magicPrint() {
+    await new Promise(r => setTimeout(r, 1000));
 
-    const table = document.querySelector("#results-table") || document.querySelector("#studentsList");
-    if (!table || table.rows.length <= 1) {
-        alert("No data to download!");
-        return;
-    }
+    const { jsPDF } = window.jspdf;
 
-    const canvas = await html2canvas(table, {
+    const canvas = await html2canvas(document.body, { 
         scale: 2,
         useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false
+        allowTaint: true,
+        backgroundColor: '#ffffff'
     });
 
     const imgData = canvas.toDataURL("image/png");
-    const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
 
-    const imgWidth = 190;
-    const pageHeight = 290;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 20;
+    const imgWidth = 210;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // Title
-    pdf.setFontSize(20);
-    pdf.text("EXAM RESULTS - ALL STUDENTS", 105, 15, { align: "center" });
-    pdf.setFontSize(12);
-    pdf.text(`Generated: ${new Date().toLocaleString()}`, 105, position, { align: "center" });
-    position += 10;
-
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 20;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-    }
-
-    pdf.save(`Exam_Results_${new Date().toISOString().slice(0,10)}.pdf`);
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    pdf.save(`Result_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 </script>
-
-</body>
-</html>
