@@ -5,27 +5,32 @@ const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
 
 
 // =============================
-// ADMIN LOGIN
+// ADMIN LOGIN (userId + password)
 // =============================
 async function adminLogin() {
-    const username = document.getElementById("username").value.trim();
+    const userId = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
     const msg = document.getElementById("msg");
     msg.innerHTML = "";
 
+    if (!userId || !password) {
+        msg.innerHTML = "<span class='text-danger'>Enter user id and password</span>";
+        return;
+    }
+
     const response = await fetch(`${BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ userId, password })
     });
 
     const data = await response.json();
 
-    if (data.status === "ok") {
+    if (data.status === "ok" && data.token) {
         localStorage.setItem("adminToken", data.token);
         window.location.href = "admin-dashboard.html";
     } else {
-        msg.innerHTML = `<span class='text-danger'>Invalid username or password</span>`;
+        msg.innerHTML = `<span class='text-danger'>Invalid user id or password</span>`;
     }
 }
 
@@ -35,7 +40,7 @@ async function adminLogin() {
 // =============================
 function adminLogout() {
     localStorage.removeItem("adminToken");
-    window.location.href = "../index.html";
+    window.location.href = "admin-login.html";
 }
 
 
@@ -100,14 +105,15 @@ async function loadQuestions() {
     });
 
     const data = await response.json();
+    const questions = data.questions || data;
 
-    if (data.status !== "ok") {
-        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading questions</td></tr>`;
+    if (!questions || questions.length === 0) {
+        table.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No questions found</td></tr>`;
         return;
     }
 
-    data.questions.forEach((q, index) => {
-        const row = `
+    questions.forEach((q, index) => {
+        table.innerHTML += `
         <tr>
             <td>${index + 1}</td>
             <td>${q.text}</td>
@@ -125,7 +131,6 @@ async function loadQuestions() {
                 </button>
             </td>
         </tr>`;
-        table.innerHTML += row;
     });
 }
 
@@ -150,10 +155,14 @@ async function deleteQuestion(id) {
     }
 }
 
+
+// =============================
+// UPLOAD STUDENTS EXCEL
+// =============================
 function uploadStudentsExcel() {
     const fileInput = document.getElementById("excelFile");
     const statusDiv = document.getElementById("uploadStatus");
-    
+
     if (!fileInput.files[0]) {
         alert("Please select an Excel file first!");
         return;
@@ -165,7 +174,7 @@ function uploadStudentsExcel() {
         return;
     }
 
-    statusDiv.innerHTML = `<div class="text-info">Uploading & processing... Please wait</div>`;
+    statusDiv.innerHTML = `<div class="text-info">Uploading & processing...</div>`;
 
     const formData = new FormData();
     formData.append("file", file);
@@ -178,172 +187,65 @@ function uploadStudentsExcel() {
     .then(r => r.json())
     .then(data => {
         if (data.status === "ok") {
-            statusDiv.innerHTML = `
-                <div class="alert alert-success">
-                    <strong>SUCCESS!</strong><br>
-                    ${data.total} students updated successfully!<br>
-                    File: ${file.name}
-                </div>
-            `;
+            statusDiv.innerHTML = `<div class="alert alert-success">
+                ${data.total} students updated successfully
+            </div>`;
             fileInput.value = "";
         } else {
             statusDiv.innerHTML = `<div class="alert alert-danger">${data.msg}</div>`;
         }
     })
     .catch(() => {
-        statusDiv.innerHTML = `<div class="alert alert-danger">Upload failed!</div>`;
+        statusDiv.innerHTML = `<div class="alert alert-danger">Upload failed</div>`;
     });
 }
 
+
+// =============================
+// LOAD STUDENTS
+// =============================
 function loadAllStudents() {
     fetch(`${BASE_URL}/api/admin/students`, {
-        headers: { "X-ADMIN-TOKEN": ADMIN_TOKEN }
+        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
     })
     .then(r => r.json())
     .then(data => {
-        const tbody = document.getElementById("studentsList") || document.getElementById("studentsTableBody");
+        const tbody = document.getElementById("studentsTableBody");
         if (!tbody) return;
 
         tbody.innerHTML = "";
+
         if (!data.students || data.students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5">No students found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center">No students found</td></tr>`;
             return;
         }
 
         data.students.forEach((s, i) => {
-            const status = s.status === "Completed" 
-                ? `<span class="badge bg-success px-3 py-2">Completed</span>`
-                : `<span class="badge bg-warning px-3 py-2 text-dark">In Progress</span>`;
-
-            const score = s.score !== null ? `<strong class="text-success">${s.score}</strong>` : "—";
-
-            const row = `
-                <tr>
-                    <td class="text-center"><strong>${i + 1}</strong></td>
-                    <td><strong>${s.roll_no || "—"}</strong></td>
-                    <td class="fw-bold">${s.name}</td>
-                    <td>${s.email}</td>
-                    <td>${s.phone || "—"}</td>
-                    <td>${score}</td>
-                    <td>${status}</td>
-                    <td><small>${s.started_at ? new Date(s.started_at).toLocaleString('en-IN') : "—"}</small></td>
-                    <td>
-                        <a href="student-result-detail.html?attempt=${s.attempt_id}" class="btn btn-sm btn-primary">View</a>
-                    </td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        });
-    })
-    .catch(() => {
-        alert("Failed to load students");
-    });
-}
-
-// Auto-run on page load
-if (window.location.href.includes("view-results.html")) {
-    document.addEventListener("DOMContentLoaded", loadResults);
-}
-if (window.location.href.includes("student-details.html")) {
-    document.addEventListener("DOMContentLoaded", loadAllStudents);
-}
-
-
-
-
-// =============================
-// LOAD RESULTS LIST
-// =============================
-async function loadResults() {
-    fetch("https://online-exam-backend-f3rp.onrender.com/api/results", {
-        headers: {
-            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const tbody = document.getElementById("results-table");
-        if (!tbody) {
-            console.error("Table body not found!");
-            return;
-        }
-
-        if (!data.results || data.results.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No results yet</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = "";  // clear first
-
-        data.results.forEach((res, i) => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
+            tbody.innerHTML += `
+            <tr>
                 <td>${i + 1}</td>
-                <td>${res.roll_no || "—"}</td>
-                <td>${res.name || "—"}</td>
-                <td><strong>${res.score}</strong></td>
-                <td>${new Date(res.started_at).toLocaleString()}</td>
-                <td>${res.finished_at ? new Date(res.finished_at).toLocaleString() : "—"}</td>
+                <td>${s.roll_no || "—"}</td>
+                <td>${s.name}</td>
+                <td>${s.email}</td>
+                <td>${s.phone || "—"}</td>
+                <td>${s.score ?? "—"}</td>
+                <td>${s.status}</td>
+                <td>${s.started_at ? new Date(s.started_at).toLocaleString() : "—"}</td>
                 <td>
-                    <a href="result-detail.html?attempt=${res.attempt_id}" class="btn btn-sm btn-primary">
-                        View Details
+                    <a href="student-result-detail.html?attempt=${s.attempt_id}" class="btn btn-sm btn-primary">
+                        View
                     </a>
                 </td>
-                <td>
-                    <button onclick="deleteAttempt(${res.attempt_id})" class="btn btn-sm btn-danger">
-                        Delete
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
+            </tr>`;
         });
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Failed to load results");
     });
 }
 
 
 // =============================
-// LOAD SINGLE RESULT DETAIL
+// AUTO LOAD
 // =============================
-async function loadSingleResult(attempt_id) {
-    const response = await fetch(`${BASE_URL}/api/admin/result/${attempt_id}`, {
-        headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
-    });
-
-    const data = await response.json();
-
-    if (data.status !== "ok") {
-        document.body.innerHTML = "<h3 class='text-danger text-center'>Unable to load result</h3>";
-        return;
-    }
-
-    document.getElementById("student-info").innerHTML = `
-        <div class="card p-3 shadow-sm">
-            <h5>Student: ${data.student.name} (${data.student.roll_no})</h5>
-            <p>Score: <strong>${data.student.score}</strong></p>
-            <p>Started: ${new Date(data.student.started_at).toLocaleString()}</p>
-            <p>Finished: ${new Date(data.student.finished_at).toLocaleString()}</p>
-        </div>
-    `;
-
-    const table = document.getElementById("detail-table");
-
-    data.answers.forEach(ans => {
-        const row = `
-        <tr>
-            <td>${ans.question}</td>
-            <td>A: ${ans.opt_a}<br>B: ${ans.opt_b}<br>C: ${ans.opt_c}<br>D: ${ans.opt_d}</td>
-            <td>${ans.correct}</td>
-            <td>${ans.selected || "-"}</td>
-            <td class="${
-                ans.status === "Correct" ? "text-success" :
-                ans.status === "Wrong"   ? "text-danger"  :
-                "text-muted"
-            }">${ans.status}</td>
-        </tr>`;
-        table.innerHTML += row;
-    });
-}
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.href.includes("view-questions.html")) loadQuestions();
+    if (window.location.href.includes("student-details.html")) loadAllStudents();
+});
