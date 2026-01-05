@@ -1,7 +1,8 @@
 // =============================
 // CONFIG
 // =============================
-const BASE_URL = "https://online-exam-backend-f3rp.onrender.com";
+const BASE_URL = "https://exam-tool-backend-clean.onrender.com";
+
 
 
 // =============================
