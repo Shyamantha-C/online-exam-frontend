@@ -32,6 +32,7 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th class="no-print">Action</th>
                         </tr>
                     </thead>
                     <tbody id="studentsBody">
@@ -80,6 +81,29 @@ async function magicPrint() {
 fetch("https://exam-tool-backend-clean.onrender.com/api/admin/excel-students", {
     headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
 })
+
+function deleteStudent(email) {
+    if (!confirm(`Delete student ${email}?`)) return;
+
+    fetch("https://exam-tool-backend-clean.onrender.com/api/admin/delete-excel-student", {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
+        },
+        body: JSON.stringify({ email })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "ok") {
+            location.reload();
+        } else {
+            alert("Failed to delete student");
+        }
+    })
+    .catch(() => alert("Server error"));
+}
+
 .then(r => r.json())
 .then(data => {
     const tbody = document.getElementById("studentsBody");
@@ -93,15 +117,22 @@ fetch("https://exam-tool-backend-clean.onrender.com/api/admin/excel-students", {
     }
 
     data.students.forEach((s, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td class="fw-bold fs-5">${i + 1}</td>
-            <td class="fw-bold">${s.name || "—"}</td>
-            <td>${s.email}</td>
-            <td>${s.phone}</td>
-        `;
-        tbody.appendChild(row);
-    });
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td class="fw-bold fs-5">${i + 1}</td>
+        <td class="fw-bold">${s.name || "—"}</td>
+        <td>${s.email}</td>
+        <td>${s.phone}</td>
+        <td class="no-print">
+            <button class="btn btn-sm btn-danger"
+                onclick="deleteStudent('${s.email}')">
+                ❌ Delete
+            </button>
+        </td>
+    `;
+    tbody.appendChild(row);
+});
+
 })
 .catch(() => {
     document.getElementById("studentsBody").innerHTML = `<tr><td colspan="4" class="text-center text-danger py-5 fs-3">Failed to load</td></tr>`;
