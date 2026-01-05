@@ -22,7 +22,10 @@ async function adminLogin() {
     const response = await fetch(`${BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, password })
+        body: JSON.stringify({
+            username: userId,   // ✅ mapping fix
+            password
+        })
     });
 
     const data = await response.json();
