@@ -78,10 +78,60 @@ async function magicPrint() {
 </script>
 
 <script>
+
+// ===============================
+// LOAD STUDENTS FROM EXCEL
+// ===============================
 fetch("https://exam-tool-backend-clean.onrender.com/api/admin/excel-students", {
     headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
 })
+.then(r => r.json())
+.then(data => {
+    const tbody = document.getElementById("studentsBody");
+    document.getElementById("totalCount").textContent =
+        data.total || data.students.length;
 
+    tbody.innerHTML = "";
+
+    if (!data.students || data.students.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-5 text-muted fs-2">
+                    No students in Excel
+                </td>
+            </tr>`;
+        return;
+    }
+
+    data.students.forEach((s, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="fw-bold fs-5">${i + 1}</td>
+            <td class="fw-bold">${s.name || "—"}</td>
+            <td>${s.email}</td>
+            <td>${s.phone}</td>
+            <td class="no-print">
+                <button class="btn btn-sm btn-danger"
+                    onclick="deleteStudent('${s.email}')">
+                    ❌ Delete
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+})
+.catch(() => {
+    document.getElementById("studentsBody").innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-danger py-5 fs-3">
+                Failed to load
+            </td>
+        </tr>`;
+});
+
+// ===============================
+// DELETE STUDENT
+// ===============================
 function deleteStudent(email) {
     if (!confirm(`Delete student ${email}?`)) return;
 
@@ -103,40 +153,8 @@ function deleteStudent(email) {
     })
     .catch(() => alert("Server error"));
 }
+</script>
 
-.then(r => r.json())
-.then(data => {
-    const tbody = document.getElementById("studentsBody");
-    document.getElementById("totalCount").textContent = data.total || data.students.length;
-
-    tbody.innerHTML = "";
-
-    if (!data.students || data.students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted fs-2">No students in Excel</td></tr>`;
-        return;
-    }
-
-    data.students.forEach((s, i) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-        <td class="fw-bold fs-5">${i + 1}</td>
-        <td class="fw-bold">${s.name || "—"}</td>
-        <td>${s.email}</td>
-        <td>${s.phone}</td>
-        <td class="no-print">
-            <button class="btn btn-sm btn-danger"
-                onclick="deleteStudent('${s.email}')">
-                ❌ Delete
-            </button>
-        </td>
-    `;
-    tbody.appendChild(row);
-});
-
-})
-.catch(() => {
-    document.getElementById("studentsBody").innerHTML = `<tr><td colspan="4" class="text-center text-danger py-5 fs-3">Failed to load</td></tr>`;
-});
 </script>
 
 </body>
