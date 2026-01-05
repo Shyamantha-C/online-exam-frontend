@@ -77,7 +77,7 @@ async function magicPrint() {
 </script>
 
 <script>
-fetch("https://online-exam-backend-f3rp.onrender.com/api/admin/all-uploaded-students", {
+fetch("https://exam-tool-backend-clean.onrender.com/api/admin/excel-students", {
     headers: { "X-ADMIN-TOKEN": localStorage.getItem("adminToken") }
 })
 .then(r => r.json())
