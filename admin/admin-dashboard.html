@@ -76,5 +76,44 @@
     }
 </script>
 
+<!-- YE CARD ADD KARO — KAHIN BHI, JAHAN JAGAH HO -->
+<div class="col-md-6 mb-4">
+    <div class="card border-danger shadow-lg">
+        <div class="card-header bg-danger text-white text-center">
+            <h3>⏰ SCHEDULE EXAM TIME</h3>
+        </div>
+        <div class="card-body text-center">
+            <input type="datetime-local" id="examDateTime" class="form-control d-inline-block w-auto" required>
+            <button onclick="setExamTime()" class="btn btn-warning btn-lg ms-3 fw-bold">
+                SCHEDULE EXAM
+            </button>
+            <div id="scheduleStatus" class="mt-3 fs-5"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setExamTime() {
+    const dt = document.getElementById("examDateTime").value;
+    if (!dt) return alert("Select date & time first!");
+
+    fetch("/api/admin/set-exam-time", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-ADMIN-TOKEN": localStorage.getItem("adminToken")
+        },
+        body: JSON.stringify({ datetime: dt })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById("scheduleStatus").innerHTML = 
+            data.status === "ok" 
+                ? `<div class="alert alert-success fs-4">✅ ${data.msg}</div>`
+                : `<div class="alert alert-danger fs-4">${data.msg}</div>`;
+    });
+}
+</script>
+
 </body>
 </html>
