@@ -9,12 +9,12 @@ const BASE_URL = "https://exam-tool-backend-clean.onrender.com";
 // ADMIN LOGIN (userId + password)
 // =============================
 async function adminLogin() {
-    const userId = document.getElementById("username").value.trim();
+    const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
     const msg = document.getElementById("msg");
     msg.innerHTML = "";
 
-    if (!userId || !password) {
+    if (!username || !password) {
         msg.innerHTML = "<span class='text-danger'>Enter user id and password</span>";
         return;
     }
@@ -22,10 +22,7 @@ async function adminLogin() {
     const response = await fetch(`${BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            username: userId,   // ✅ mapping fix
-            password
-        })
+        body: JSON.stringify({ username, password })
     });
 
     const data = await response.json();
