@@ -23,10 +23,10 @@ async function studentLogin() {
 
     if (data.status === "ok") {
       localStorage.setItem("student_id", data.student_id);
-      localStorage.setItem("student_name", email.split("@")[0]); // optional
+      localStorage.setItem("student_name", data.name || email.split("@")[0]);
       window.location.href = "student-dashboard.html";
     } else {
-      msg.innerHTML = "<span class='text-danger'>Invalid email or password</span>";
+      msg.innerHTML = `<span class='text-danger'>${data.msg || "Invalid email or password"}</span>`;
     }
   } catch (err) {
     msg.innerHTML = "<span class='text-danger'>Server error. Try again later.</span>";
